@@ -51,39 +51,73 @@ lemma add_zero (a : F p) : a + 0 = a := by
   rw [add_comm, zero_add]
 
 lemma add_assoc (a b c : F p) : (a + b) + c = a + (b + c) := by
-  sorry
+  ext
+  calc (a + b + c).val
+    _ = ((a.val + b.val) % p + c.val) % p := rfl
+    _ = (a.val + b.val + c.val) % p := by rw [Nat.mod_add_mod]
+    _ = (a.val + (b.val + c.val)) % p := by rw [Nat.add_assoc]
+    _ = (a.val + (b.val + c.val) % p) % p := by rw [Nat.add_mod_mod]
+    _ = (a + (b + c)).val := rfl
 
 lemma add_left_neg (a : F p) : -a + a = 0 := by
   have := a.cond.le
-  sorry
+  ext
+  calc (-a + a).val
+    _ = ((p - a.val) % p + a.val) % p := rfl
+    _ = (p - a.val + a.val) % p := by rw [Nat.mod_add_mod]
+    _ = p % p := by rw [Nat.sub_add_cancel this]
+    _ = 0 := by rw [Nat.mod_self]
+
 
 /-- Multiplicative axioms -/
 
 lemma mul_comm (a b : F p) : a * b = b * a := by
   ext
-  sorry
+  calc (a * b).val
+    _ = (a.val * b.val) % p := rfl
+    _ = (b.val * a.val) % p := by rw [Nat.mul_comm]
+
 
 lemma zero_mul (a : F p) : 0 * a = 0 := by
   ext
-  sorry
+  calc (0 * a).val
+    _ = (0 * a.val) % p := rfl
+    _ = 0 := by rw [Nat.zero_mul, Nat.zero_mod]
+
 
 lemma mul_zero (a : F p) : a * 0 = 0 := by
   rw [mul_comm, zero_mul]
 
 lemma one_mul (a : F p) : 1 * a = a := by
   have : a.val < p := a.cond
-  sorry
+  ext
+  calc (1 * a).val
+    _ = (1 * a.val) % p := rfl
+    _ = a.val % p := by rw [Nat.one_mul]
+    _ = a.val := by rw [Nat.mod_eq_of_lt this]
+
 
 lemma mul_one (a : F p) : a * 1 = a := by
   rw [mul_comm, one_mul]
 
 lemma mul_assoc (a b c : F p) : (a * b) * c = a * (b * c) := by
-  sorry
+  ext
+  calc (a * b * c).val
+    _ = ((a.val * b.val) % p * c.val) % p := rfl
+    _ = (a.val * b.val * c.val) % p := by rw [Nat.mod_mul_mod]
+    _ = (a.val * (b.val * c.val)) % p := by rw [Nat.mul_assoc]
+    _ = (a.val * (b.val * c.val % p)) % p := by rw [← Nat.mul_mod_mod]
+
 
 /-- Distributivity axioms -/
 
 lemma left_distrib (a b c : F p) : a * (b + c) = a * b + a * c := by
-  sorry
+  ext
+  calc (a * (b + c)).val
+    _ = (a.val * ((b.val + c.val) % p)) % p := rfl
+    _ = (a.val * (b.val + c.val)) % p := by rw [Nat.mul_mod_mod]
+    _ = (a.val * b.val + a.val * c.val) % p := by rw [Nat.mul_add]
+    _ = ((a.val * b.val) % p + (a.val * c.val) % p) % p := by rw [Nat.add_mod]
 
 lemma right_distrib (a b c : F p) : (a + b) * c = a * c + b * c := by
   rw [mul_comm, left_distrib, mul_comm b, mul_comm]
@@ -103,14 +137,35 @@ lemma invertibility (a : F p) (ha : a ≠ 0) : ∃ b : F p, a * b = 1 := by
   have hp : p.Prime := hp.out
   have hint₁ : ∀ x, a * x = 0 → x = 0 := by
     intro x hx
-    sorry
+    rw [F.ext_iff] at hx
+    change a.val * x.val % p = 0 at hx
+    apply Nat.dvd_of_mod_eq_zero at hx
+    rw [Nat.Prime.dvd_mul hp] at hx
+    cases hx with
+    | inl hpa =>
+      apply False.elim
+      apply ha
+      ext
+      exact Nat.eq_zero_of_dvd_of_lt hpa a.cond
+    | inr hpx =>
+      ext
+      exact Nat.eq_zero_of_dvd_of_lt hpx x.cond
+
   have hint₂ : Function.Injective (a * ·) := by
     intro x y (e : a * x = a * y)
-    sorry
+    apply congrArg (· + a * (-y)) at e
+    rw [← left_distrib, ← left_distrib, add_comm y, add_left_neg, mul_zero] at e
+    apply hint₁ at e
+    apply congrArg (· + y) at e
+    rw [add_assoc, add_left_neg, add_zero, zero_add] at e
+    exact e
+
   have hint₃ : Function.Surjective (a * ·) := by
-    sorry
+    exact Finite.injective_iff_surjective.mp hint₂
+
   have hint₄ : ∀ b, ∃ c, a * c = b := hint₃
-  sorry
+  
+  exact hint₄ 1
 
 /-- Put it all together -/
 
