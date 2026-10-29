@@ -39,20 +39,30 @@ lemma add_mem {x y : ℂ} (hx : x ∈ ℚ[I]) (hy : y ∈ ℚ[I]) : x + y ∈ �
   ring_nf                    -- organise terms
 
 lemma zero_mem : 0 ∈ ℚ[I] := by
-  use sorry, sorry
-  sorry
+  use 0, 0
+  simp
 
 lemma neg_mem {x : ℂ} (hx : x ∈ ℚ[I]) : -x ∈ ℚ[I] := by
   obtain ⟨xa, xb, rfl⟩ := hx
-  sorry
+  use -xa, -xb
+  simp
+  ring_nf
+
 
 
 lemma mul_mem {x y : ℂ} (hx : x ∈ ℚ[I]) (hy : y ∈ ℚ[I]) : x * y ∈ ℚ[I] := by
-  sorry
+  obtain ⟨xa, xb, rfl⟩ := hx
+  obtain ⟨ya, yb, rfl⟩ := hy
+  use xa * ya - xb * yb, xa * yb + xb * ya
+  simp
+  ring_nf
+  simp
+  ring_nf
 
 
 lemma one_mem : 1 ∈ ℚ[I] := by
-  sorry
+  use 1, 0
+  simp
 
 lemma inv_mem {x : ℂ} (hx : x ∈ ℚ[I]) (hx' : x ≠ 0) : x⁻¹ ∈ ℚ[I] := by
   obtain ⟨xa, xb, rfl⟩ := hx
@@ -61,8 +71,26 @@ lemma inv_mem {x : ℂ} (hx : x ∈ ℚ[I]) (hx' : x ≠ 0) : x⁻¹ ∈ ℚ[I] 
     simp [show xa = 0 by simpa using congr(($e).re),
       show xb = 0 by simpa using congr(($e).im)] at hx'
   have hint₂ : xa ^ 2 + xb ^ 2 = (xa + xb * I) * (xa + -xb * I) := by
-    sorry
-  sorry
+    ring_nf
+    simp
+  use xa / (xa ^ 2 + xb ^ 2), -xb / (xa ^ 2 + xb ^ 2)
+  push_cast at hint₂
+  push_cast
+  calc
+    (xa : ℂ) / ((xa : ℂ)^2 + (xb : ℂ)^2) +
+        (-xb : ℂ) / ((xa : ℂ)^2 + (xb : ℂ)^2) * I
+      = (xa + -xb * I) /
+          ((xa : ℂ)^2 + (xb : ℂ)^2) := by ring
+    _ = (xa + xb * I)⁻¹ := by
+      rw [hint₂]
+      field_simp [hx', hint₁]
+      ring_nf
+      field_simp
+      ring_nf
+      field_simp [hx', hint₁]
+      simp_all
+
+
 
 noncomputable
 def QI_subfield : Subfield ℂ where
