@@ -135,6 +135,7 @@ Here I have listed some lemmas that you may or may not need.
 
 lemma invertibility (a : F p) (ha : a ≠ 0) : ∃ b : F p, a * b = 1 := by
   have hp : p.Prime := hp.out
+  
   have hint₁ : ∀ x, a * x = 0 → x = 0 := by
     intro x hx
     rw [F.ext_iff] at hx
@@ -143,13 +144,10 @@ lemma invertibility (a : F p) (ha : a ≠ 0) : ∃ b : F p, a * b = 1 := by
     rw [Nat.Prime.dvd_mul hp] at hx
     cases hx with
     | inl hpa =>
-      apply False.elim
-      apply ha
-      ext
-      exact Nat.eq_zero_of_dvd_of_lt hpa a.cond
+      refine False.elim (ha.elim ?_)
+      exact F.ext _ _ (Nat.eq_zero_of_dvd_of_lt hpa a.cond)
     | inr hpx =>
-      ext
-      exact Nat.eq_zero_of_dvd_of_lt hpx x.cond
+      exact F.ext _ _ (Nat.eq_zero_of_dvd_of_lt hpx x.cond)
 
   have hint₂ : Function.Injective (a * ·) := by
     intro x y (e : a * x = a * y)
@@ -160,8 +158,8 @@ lemma invertibility (a : F p) (ha : a ≠ 0) : ∃ b : F p, a * b = 1 := by
     rw [add_assoc, add_left_neg, add_zero, zero_add] at e
     exact e
 
-  have hint₃ : Function.Surjective (a * ·) := by
-    exact Finite.injective_iff_surjective.mp hint₂
+  have hint₃ : Function.Surjective (a * ·) := 
+    Finite.injective_iff_surjective.mp hint₂
 
   have hint₄ : ∀ b, ∃ c, a * c = b := hint₃
   
